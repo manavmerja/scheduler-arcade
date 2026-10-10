@@ -73,19 +73,284 @@ body {
   background: #334155;
 }
 
-/* Print Styles for Concept Chart Export */
+/* Print Styles for High-Contrast Concept Chart & Simulation Report PDF Export */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  html,
   body {
     background: #ffffff !important;
-    color: #000000 !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .no-print {
+
+  /* Hide interactive non-report UI */
+  .no-print,
+  header,
+  nav,
+  footer,
+  button,
+  .mobile-bottom-bar,
+  [role="dialog"] {
     display: none !important;
   }
-  .glass-panel, .glass-card {
+
+  /* Show dedicated print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Layout container fixes */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Convert Cyber Glassmorphism into Crisp Academic Document Cards */
+  .glass-panel,
+  .glass-card {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
     box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: #0f172a !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 14pt !important;
+    padding: 12pt !important;
+    border-radius: 6pt !important;
+  }
+
+  /* Headings & Title Contrast */
+  h1, h2, h3, h4, h5, h6 {
+    color: #090d16 !important;
+    font-weight: 800 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* General Text Contrast Adjustments */
+  .text-white {
+    color: #090d16 !important;
+  }
+
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300 {
+    color: #1e293b !important;
+  }
+
+  .text-slate-400,
+  .text-slate-500 {
+    color: #334155 !important;
+  }
+
+  /* High-Contrast Value & Accent Color Overrides for Light Paper */
+  .text-cyan-400,
+  .text-cyan-300,
+  .text-cyan-200,
+  .text-sky-400,
+  .text-sky-300 {
+    color: #0369a1 !important; /* Deep Sky Blue - Contrast Ratio > 7:1 */
+    font-weight: 700 !important;
+  }
+
+  .text-emerald-400,
+  .text-emerald-300,
+  .text-emerald-200,
+  .text-green-400,
+  .text-green-300 {
+    color: #047857 !important; /* Rich Forest Emerald - Contrast Ratio > 7:1 */
+    font-weight: 700 !important;
+  }
+
+  .text-amber-400,
+  .text-amber-300,
+  .text-amber-200,
+  .text-yellow-400 {
+    color: #92400e !important; /* Deep Warm Amber - Contrast Ratio > 7.5:1 */
+    font-weight: 700 !important;
+  }
+
+  .text-pink-400,
+  .text-pink-300,
+  .text-fuchsia-400,
+  .text-fuchsia-300,
+  .text-fuchsia-200,
+  .text-purple-400,
+  .text-purple-300 {
+    color: #7e22ce !important; /* Deep Royal Purple - Contrast Ratio > 8:1 */
+    font-weight: 700 !important;
+  }
+
+  .text-red-400,
+  .text-red-300,
+  .text-red-300\/90 {
+    color: #b91c1c !important; /* Deep Warning Red - Contrast Ratio > 7:1 */
+    font-weight: 700 !important;
+  }
+
+  /* High-Contrast Table Styling */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 1.5px solid #94a3b8 !important;
+    page-break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  thead tr {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+  }
+
+  thead th {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: 1px solid #334155 !important;
+    padding: 6pt 6pt !important;
+    font-size: 8pt !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  tbody tr:nth-child(even) {
+    background-color: #f8fafc !important;
+  }
+
+  tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+  }
+
+  tbody td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 5pt 6pt !important;
+    color: #1e293b !important;
+    font-size: 8pt !important;
+    vertical-align: middle !important;
+  }
+
+  /* Convert Dark Internal Boxes to High-Contrast Light Containers */
+  .bg-slate-950,
+  .bg-slate-950\/50,
+  .bg-slate-950\/60,
+  .bg-slate-900,
+  .bg-slate-900\/80,
+  .bg-slate-900\/90 {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
     color: #0f172a !important;
   }
+
+  /* Mathematical Formula Boxes */
+  .formula-card-cyan {
+    border: 1.5px solid #0284c7 !important;
+    background-color: #f0f9ff !important;
+  }
+
+  .formula-card-fuchsia {
+    border: 1.5px solid #9333ea !important;
+    background-color: #faf5ff !important;
+  }
+
+  .formula-card-emerald {
+    border: 1.5px solid #059669 !important;
+    background-color: #f0fdf4 !important;
+  }
+
+  .formula-code-box {
+    background-color: #ffffff !important;
+    border: 1.5px solid #94a3b8 !important;
+    color: #090d16 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Starvation & Preemption Badges */
+  .badge-safe {
+    background-color: #dcfce7 !important;
+    color: #14532d !important;
+    border: 1px solid #86efac !important;
+    font-weight: 700 !important;
+  }
+
+  .badge-danger {
+    background-color: #fee2e2 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #fca5a5 !important;
+    font-weight: 700 !important;
+  }
+
+  .badge-neutral {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Form inputs converted into crisp print text */
+  input[type="number"],
+  input[type="text"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    padding: 0 !important;
+    width: auto !important;
+    box-shadow: none !important;
+  }
+
+  /* Metric KPI Cards in Print */
+  .kpi-card-print {
+    background-color: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    page-break-inside: avoid !important;
+  }
+
+  .kpi-value-print {
+    color: #090d16 !important;
+    font-weight: 800 !important;
+  }
+
+  /* Character / Hero Cards */
+  .hero-card-print {
+    background-color: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Print Page Breaks */
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: always !important;
+  }
 }
+

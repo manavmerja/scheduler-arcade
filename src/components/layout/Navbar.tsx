@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       {/* Sleek Top Navbar */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-[#090d16]/70 backdrop-blur-2xl transition-all duration-300">
+      <header className="no-print sticky top-0 z-40 w-full border-b border-white/[0.06] bg-[#090d16]/70 backdrop-blur-2xl transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo & Brand */}
           <div
@@ -87,20 +87,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 if (!soundEnabled) soundFX.playQuantumTick();
               }}
               title={soundEnabled ? 'Mute Sound FX' : 'Enable Sound FX'}
-              className={`p-2.5 rounded-xl border transition-all duration-200 ${
-                soundEnabled
-                  ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 shadow-sm shadow-cyan-500/10'
-                  : 'bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-300'
-              }`}
+              className="p-2.5 rounded-xl border transition-all duration-200 bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-300"
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              {soundEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4" />}
             </button>
           </div>
         </div>
       </header>
 
       {/* Mobile Bottom Navigation Bar (Smooth & Clean) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090d16]/85 backdrop-blur-2xl border-t border-white/[0.08] px-3 py-2 flex items-center justify-around shadow-2xl">
+      <nav className="no-print md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090d16]/85 backdrop-blur-2xl border-t border-white/[0.08] px-3 py-2 flex items-center justify-around shadow-2xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

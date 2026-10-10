@@ -25,7 +25,8 @@ import {
   AlertTriangle, 
   Layers,
   Sliders,
-  Flame
+  Flame,
+  Printer
 } from 'lucide-react';
 import { soundFX } from '@/lib/sound';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +36,28 @@ export const GanttVisualizer: React.FC = () => {
   const [processes, setProcesses] = useState<Process[]>(DEFAULT_PRESET_PROCESSES);
   const [timeQuantum, setTimeQuantum] = useState<number>(2);
   const [agingRate, setAgingRate] = useState<number>(0);
+  const [exportDate, setExportDate] = useState<string>('Academic Year 2026');
+
+  React.useEffect(() => {
+    try {
+      setExportDate(
+        new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        })
+      );
+    } catch {
+      // Fallback
+    }
+  }, []);
+
+  const handlePrint = () => {
+    soundFX.playLaser(500, 0.1);
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
+  };
 
   // Compute simulation result based on active algorithm
   const result: SimulationResult = useMemo(() => {
@@ -94,6 +117,27 @@ export const GanttVisualizer: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Print-Only Simulation Run Report Header */}
+      <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">
+              CPU Scheduling Simulation Run Report
+            </h1>
+            <p className="text-xs text-slate-700 font-semibold mt-0.5">
+              Algorithm: <span className="text-slate-950 font-bold">{hero.name} ({hero.osAlgorithm})</span> • Type: <span className="text-slate-950 font-bold">{hero.algorithmType}</span>
+              {selectedAlgo === 'RR' && ` • Time Quantum q = ${timeQuantum} units`}
+              {selectedAlgo === 'PRIORITY' && agingRate > 0 && ` • Aging Rate = Every ${agingRate} ticks`}
+            </p>
+          </div>
+          <div className="text-right text-[10px] text-slate-700 font-mono">
+            <p className="font-bold text-slate-900">SIMULATION REPORT</p>
+            <p>Total Execution Makespan: {result.totalTime} units</p>
+            <p>Export Date: {exportDate}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header & Hero Info Banner */}
       <div className={`p-5 rounded-2xl glass-panel border ${hero.borderColor} relative overflow-hidden transition-all duration-300`}>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -121,7 +165,7 @@ export const GanttVisualizer: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Presets */}
+          {/* Quick Presets & Export Report */}
           <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
             <span className="text-xs text-slate-400 font-medium">Test Presets:</span>
             <button
@@ -149,6 +193,15 @@ export const GanttVisualizer: React.FC = () => {
             >
               <AlertTriangle className="w-3 h-3" />
               Starvation Test
+            </button>
+
+            <button
+              onClick={handlePrint}
+              className="no-print text-xs px-3.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 transition-all flex items-center gap-1.5 font-semibold shadow-sm ml-1"
+              title="Print or export current simulation report to PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Export Report (PDF)</span>
             </button>
           </div>
         </div>
@@ -229,45 +282,45 @@ export const GanttVisualizer: React.FC = () => {
 
       {/* Real-time Metrics Dashboard (4 KPI Cards) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-xl glass-card border border-cyan-500/20 relative overflow-hidden">
+        <div className="p-4 rounded-xl glass-card kpi-card-print border border-cyan-500/20 relative overflow-hidden">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
             <span>Avg Waiting Time (AWT)</span>
             <Clock className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-2xl font-black text-cyan-300 font-mono">
+          <div className="text-2xl font-black text-cyan-300 kpi-value-print font-mono">
             {result.avgWaitingTime} <span className="text-xs text-slate-400 font-normal">units</span>
           </div>
           <p className="text-[10px] text-slate-400 mt-1">Average time spent in Ready Queue</p>
         </div>
 
-        <div className="p-4 rounded-xl glass-card border border-fuchsia-500/20 relative overflow-hidden">
+        <div className="p-4 rounded-xl glass-card kpi-card-print border border-fuchsia-500/20 relative overflow-hidden">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
             <span>Avg Turnaround (TAT)</span>
             <CheckCircle2 className="w-4 h-4 text-fuchsia-400" />
           </div>
-          <div className="text-2xl font-black text-fuchsia-300 font-mono">
+          <div className="text-2xl font-black text-fuchsia-300 kpi-value-print font-mono">
             {result.avgTurnaroundTime} <span className="text-xs text-slate-400 font-normal">units</span>
           </div>
           <p className="text-[10px] text-slate-400 mt-1">Completion Time − Arrival Time</p>
         </div>
 
-        <div className="p-4 rounded-xl glass-card border border-emerald-500/20 relative overflow-hidden">
+        <div className="p-4 rounded-xl glass-card kpi-card-print border border-emerald-500/20 relative overflow-hidden">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
             <span>CPU Utilization</span>
             <Cpu className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-300 font-mono">
+          <div className="text-2xl font-black text-emerald-300 kpi-value-print font-mono">
             {result.cpuUtilization}%
           </div>
           <p className="text-[10px] text-slate-400 mt-1">Total active CPU time ratio</p>
         </div>
 
-        <div className="p-4 rounded-xl glass-card border border-amber-500/20 relative overflow-hidden">
+        <div className="p-4 rounded-xl glass-card kpi-card-print border border-amber-500/20 relative overflow-hidden">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
             <span>Throughput</span>
             <Layers className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-black text-amber-300 font-mono">
+          <div className="text-2xl font-black text-amber-300 kpi-value-print font-mono">
             {result.throughput} <span className="text-xs text-slate-400 font-normal">proc/unit</span>
           </div>
           <p className="text-[10px] text-slate-400 mt-1">Processes completed per time unit</p>
@@ -308,7 +361,7 @@ export const GanttVisualizer: React.FC = () => {
                     animate={{ opacity: 1, scaleY: 1 }}
                     transition={{ duration: 0.25, delay: idx * 0.02 }}
                     style={{ flex: `${duration} 0 auto`, minWidth: '40px' }}
-                    className={`h-full rounded-lg flex flex-col items-center justify-center relative group transition-all ${
+                    className={`h-full rounded-lg flex flex-col items-center justify-center relative group transition-all border border-black/10 ${
                       isIdle
                         ? 'bg-slate-800/80 text-slate-500 border border-slate-700/50 border-dashed'
                         : 'text-slate-900 font-bold shadow-md hover:brightness-110'
@@ -321,7 +374,7 @@ export const GanttVisualizer: React.FC = () => {
                     <div className="relative z-10 text-xs font-black tracking-wider text-slate-950 drop-shadow-sm">
                       {block.processId}
                     </div>
-                    <div className="relative z-10 text-[9px] font-mono text-slate-900/80">
+                    <div className="relative z-10 text-[9px] font-mono text-slate-950 font-bold">
                       [{block.startTime}-{block.endTime}]
                     </div>
                   </motion.div>
@@ -330,7 +383,7 @@ export const GanttVisualizer: React.FC = () => {
             </div>
 
             {/* Time Axis Markers */}
-            <div className="flex justify-between text-[11px] font-mono text-slate-400 px-1 pt-1">
+            <div className="flex justify-between text-[11px] font-mono text-slate-400 px-1 pt-1 font-bold">
               <span>0</span>
               {result.ganttChart.map((block, idx) => (
                 <span key={idx} style={{ flex: `${block.endTime - block.startTime} 0 auto`, textAlign: 'right' }}>
@@ -354,7 +407,7 @@ export const GanttVisualizer: React.FC = () => {
 
           <button
             onClick={handleAddProcess}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all duration-200"
+            className="no-print flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all duration-200"
           >
             <Plus className="w-4 h-4" /> Add Process
           </button>
@@ -366,13 +419,13 @@ export const GanttVisualizer: React.FC = () => {
             <thead>
               <tr className="border-b border-white/10 bg-slate-900/80 text-slate-400 font-mono">
                 <th className="p-3">Process</th>
-                <th className="p-3">Arrival Time (AT)</th>
-                <th className="p-3">Burst Time (BT)</th>
-                <th className="p-3">Priority (P)</th>
-                <th className="p-3 text-cyan-400 font-semibold">Completion (CT)</th>
-                <th className="p-3 text-fuchsia-400 font-semibold">Turnaround (TAT)</th>
-                <th className="p-3 text-emerald-400 font-semibold">Waiting (WT)</th>
-                <th className="p-3 text-center">Action</th>
+                <th className="p-3 text-center">Arrival Time (AT)</th>
+                <th className="p-3 text-center">Burst Time (BT)</th>
+                <th className="p-3 text-center">Priority (P)</th>
+                <th className="p-3 text-center text-cyan-400 font-semibold">Completion (CT)</th>
+                <th className="p-3 text-center text-fuchsia-400 font-semibold">Turnaround (TAT)</th>
+                <th className="p-3 text-center text-emerald-400 font-semibold">Waiting (WT)</th>
+                <th className="no-print p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 font-mono">
@@ -380,12 +433,12 @@ export const GanttVisualizer: React.FC = () => {
                 <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="p-3 font-bold flex items-center gap-2">
                     <span
-                      className="w-3 h-3 rounded-full shadow"
+                      className="w-3.5 h-3.5 rounded-full shadow border border-black/20"
                       style={{ backgroundColor: p.color }}
                     />
-                    <span className="text-white">{p.id}</span>
+                    <span className="text-white font-bold">{p.id}</span>
                   </td>
-                  <td className="p-3">
+                  <td className="p-3 text-center">
                     <input
                       type="number"
                       min="0"
@@ -394,7 +447,7 @@ export const GanttVisualizer: React.FC = () => {
                       className="w-16 px-2 py-1 rounded bg-slate-900 border border-white/10 text-white focus:border-cyan-400 focus:outline-none transition-colors"
                     />
                   </td>
-                  <td className="p-3">
+                  <td className="p-3 text-center">
                     <input
                       type="number"
                       min="1"
@@ -403,7 +456,7 @@ export const GanttVisualizer: React.FC = () => {
                       className="w-16 px-2 py-1 rounded bg-slate-900 border border-white/10 text-white focus:border-cyan-400 focus:outline-none transition-colors"
                     />
                   </td>
-                  <td className="p-3">
+                  <td className="p-3 text-center">
                     <input
                       type="number"
                       min="1"
@@ -413,10 +466,10 @@ export const GanttVisualizer: React.FC = () => {
                       className="w-16 px-2 py-1 rounded bg-slate-900 border border-white/10 text-white focus:border-cyan-400 focus:outline-none transition-colors"
                     />
                   </td>
-                  <td className="p-3 text-cyan-300 font-bold">{p.completionTime ?? '-'}</td>
-                  <td className="p-3 text-fuchsia-300 font-bold">{p.turnaroundTime ?? '-'}</td>
-                  <td className="p-3 text-emerald-300 font-bold">{p.waitingTime ?? '-'}</td>
-                  <td className="p-3 text-center">
+                  <td className="p-3 text-center text-cyan-300 font-bold">{p.completionTime ?? '-'}</td>
+                  <td className="p-3 text-center text-fuchsia-300 font-bold">{p.turnaroundTime ?? '-'}</td>
+                  <td className="p-3 text-center text-emerald-300 font-bold">{p.waitingTime ?? '-'}</td>
+                  <td className="no-print p-3 text-center">
                     <button
                       onClick={() => handleDeleteProcess(p.id)}
                       disabled={processes.length <= 1}
@@ -431,6 +484,37 @@ export const GanttVisualizer: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Print-Only Simulation Performance Observations */}
+      <div className="hidden print:block p-4 rounded-xl border border-slate-300 bg-slate-50 text-xs text-slate-800 space-y-1.5">
+        <h4 className="font-bold text-slate-950 uppercase text-[11px] tracking-wide">
+          Simulation Performance Observations & Analysis
+        </h4>
+        <p>
+          • <strong>Average Waiting Time (AWT):</strong> {result.avgWaitingTime} units across {processes.length} processes.
+        </p>
+        <p>
+          • <strong>Average Turnaround Time (ATAT):</strong> {result.avgTurnaroundTime} units with Total Execution Time of {result.totalTime} units.
+        </p>
+        <p>
+          • <strong>CPU Utilization:</strong> {result.cpuUtilization}% ({result.cpuUtilization === 100 ? 'Zero idle time detected; full CPU saturation achieved.' : 'Contains idle intervals in timeline.'})
+        </p>
+        <p>
+          • <strong>Throughput:</strong> {result.throughput} processes completed per time unit.
+        </p>
+        <p>
+          • <strong>Key Strength:</strong> {hero.keyStrength}
+        </p>
+        <p>
+          • <strong>Vulnerability / Trade-off:</strong> {hero.weakness}
+        </p>
+      </div>
+
+      {/* Print-Only Simulation Report Footer */}
+      <div className="hidden print:block border-t border-slate-400 pt-3 text-center text-[10px] text-slate-600 font-mono">
+        <p>Scheduler Arcade • CPU Scheduling Simulation Run Export Report</p>
+        <p className="mt-0.5">Formulas: Turnaround Time = Completion − Arrival | Waiting Time = Turnaround − Burst</p>
       </div>
     </div>
   );
