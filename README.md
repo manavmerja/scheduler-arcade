@@ -156,3 +156,5 @@ Don't panic! Here are the simple formulas you need to remember:
 Crafted with 💖, Next.js, and Operating Systems Love © 2026
 
 </div>
+
+Game
