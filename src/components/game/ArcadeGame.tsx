@@ -94,6 +94,96 @@ export const ArcadeGame: React.FC = () => {
 
   const hero = SCHEDULER_HEROES[activeHero];
 
+  // Helper to spawn a single process monster with custom specs
+  const createMonster = useCallback((canvas: HTMLCanvasElement, config?: {
+    burst?: number;
+    priority?: number;
+    color?: string;
+    xOffset?: number;
+    yPos?: number;
+    isBoss?: boolean;
+  }): Monster => {
+    const pid = `P${nextPidRef.current++}`;
+    const burst = config?.burst ?? (config?.isBoss ? 25 : Math.floor(Math.random() * 6) + 2);
+    const priority = config?.priority ?? (config?.isBoss ? 1 : Math.floor(Math.random() * 5) + 1);
+    const colors = ['#00f0ff', '#ff007f', '#ffd700', '#10b981', '#a855f7', '#f97316'];
+    const color = config?.color ?? (config?.isBoss ? '#ef4444' : colors[Math.floor(Math.random() * colors.length)]);
+    const xOffset = config?.xOffset ?? 0;
+    const y = config?.yPos ?? (80 + Math.random() * (canvas.height - 160));
+
+    return {
+      id: Math.random().toString(),
+      pid,
+      x: canvas.width + 30 + xOffset,
+      y,
+      targetX: 120,
+      targetY: y,
+      burstTime: burst,
+      remainingTime: burst,
+      arrivalTime: Date.now(),
+      priority,
+      color,
+      speed: config?.isBoss ? 0.35 : 0.5 + Math.random() * 0.3,
+      isBoss: config?.isBoss ?? false,
+    };
+  }, []);
+
+  // Spawn an educational batch of 2-3 diverse processes
+  const spawnProcessBatch = useCallback((count = 3, isBossWave = false) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (isBossWave) {
+      monstersRef.current.push(createMonster(canvas, { isBoss: true, burst: 30, priority: 1, yPos: canvas.height / 2 }));
+      return;
+    }
+
+    // Diverse preset batches so all 4 algorithms have clear strategic targets
+    const yStep = (canvas.height - 160) / Math.max(count, 1);
+    
+    // Process 1: Low Burst Time (SJF Target!)
+    monstersRef.current.push(createMonster(canvas, {
+      burst: 2,
+      priority: 4,
+      color: '#10b981', // Emerald
+      xOffset: 0,
+      yPos: 70 + 0 * yStep,
+    }));
+
+    // Process 2: High Priority VIP (Priority Target!)
+    if (count >= 2) {
+      monstersRef.current.push(createMonster(canvas, {
+        burst: 6,
+        priority: 1, // P1 VIP!
+        color: '#ffd700', // Gold
+        xOffset: 45,
+        yPos: 70 + 1 * yStep,
+      }));
+    }
+
+    // Process 3: High Burst Heavy Job (FCFS Convoy / RR multi-slice)
+    if (count >= 3) {
+      monstersRef.current.push(createMonster(canvas, {
+        burst: 9,
+        priority: 3,
+        color: '#ff007f', // Magenta
+        xOffset: 90,
+        yPos: 70 + 2 * yStep,
+      }));
+    }
+
+    // Process 4: Medium Interactive Job
+    if (count >= 4) {
+      monstersRef.current.push(createMonster(canvas, {
+        burst: 4,
+        priority: 2,
+        color: '#00f0ff', // Cyan
+        xOffset: 135,
+        yPos: 70 + 1.5 * yStep,
+      }));
+    }
+  }, [createMonster]);
+
   // Start / Reset Game
   const handleStartGame = () => {
     setIsPlaying(true);
@@ -112,37 +202,12 @@ export const ArcadeGame: React.FC = () => {
     rrIndexRef.current = 0;
     lastSpawnTimeRef.current = Date.now();
     soundFX.playLaser(700, 0.15);
+
+    // Instantly spawn an initial wave of 3 diverse processes!
+    setTimeout(() => {
+      spawnProcessBatch(3);
+    }, 100);
   };
-
-  // Spawn monster process
-  const spawnMonster = useCallback((isBoss = false) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const pid = `P${nextPidRef.current++}`;
-    const burst = isBoss ? 25 : Math.floor(Math.random() * 6) + 2;
-    const priority = isBoss ? 1 : Math.floor(Math.random() * 5) + 1;
-    const colors = ['#00f0ff', '#ff007f', '#ffd700', '#10b981', '#a855f7', '#f97316'];
-    const color = isBoss ? '#ef4444' : colors[Math.floor(Math.random() * colors.length)];
-
-    const monster: Monster = {
-      id: Math.random().toString(),
-      pid,
-      x: canvas.width + 30,
-      y: 80 + Math.random() * (canvas.height - 180),
-      targetX: 120,
-      targetY: 80 + Math.random() * (canvas.height - 180),
-      burstTime: burst,
-      remainingTime: burst,
-      arrivalTime: Date.now(),
-      priority,
-      color,
-      speed: isBoss ? 0.35 : 0.6 + Math.random() * 0.4,
-      isBoss,
-    };
-
-    monstersRef.current.push(monster);
-  }, []);
 
   // Use Skill
   const handleUseSkill = () => {
@@ -295,17 +360,19 @@ export const ArcadeGame: React.FC = () => {
 
       if (isPlaying) {
         const now = Date.now();
-        const spawnDelay = Math.max(1200, 3000 - wave * 250);
+        // Spawn batches of 2-3 processes periodically
+        const spawnDelay = Math.max(3000, 5000 - wave * 300);
         if (now - lastSpawnTimeRef.current > spawnDelay) {
-          spawnMonster(wave % 5 === 0 && monstersRef.current.length === 0);
+          const isBoss = wave % 5 === 0 && monstersRef.current.length === 0;
+          spawnProcessBatch(isBoss ? 1 : Math.min(3, 2 + Math.floor(wave / 2)), isBoss);
           lastSpawnTimeRef.current = now;
         }
 
-        attackTimerRef.current++;
-        if (attackTimerRef.current % 35 === 0 && monstersRef.current.length > 0) {
-          let target: Monster | null = null;
-          const monsters = monstersRef.current;
+        // Determine target based on active OS hero
+        let target: Monster | null = null;
+        const monsters = monstersRef.current;
 
+        if (monsters.length > 0) {
           if (activeHero === 'FCFS') {
             target = [...monsters].sort((a, b) => a.arrivalTime - b.arrivalTime)[0];
           } else if (activeHero === 'SJF') {
@@ -313,36 +380,46 @@ export const ArcadeGame: React.FC = () => {
           } else if (activeHero === 'PRIORITY') {
             target = [...monsters].sort((a, b) => a.priority - b.priority)[0];
           } else if (activeHero === 'RR') {
+            const validIndex = rrIndexRef.current % monsters.length;
+            target = monsters[validIndex] || monsters[0];
+          }
+        }
+
+        // Attack Tick Speed (Swift and Robin shoot faster!)
+        const attackInterval = activeHero === 'RR' ? 22 : activeHero === 'SJF' ? 26 : 34;
+
+        attackTimerRef.current++;
+        if (attackTimerRef.current % attackInterval === 0 && target) {
+          // In RR, advance the round robin quantum index after each slice
+          if (activeHero === 'RR') {
             rrIndexRef.current = (rrIndexRef.current + 1) % monsters.length;
-            target = monsters[rrIndexRef.current] || monsters[0];
           }
 
-          if (target) {
-            const damage = activeHero === 'FCFS' ? 2 : 1.5;
-            target.remainingTime = Math.max(0, target.remainingTime - damage);
-            soundFX.playLaser(activeHero === 'RR' ? 750 : 550, 0.06);
+          const damage = activeHero === 'FCFS' ? 2.5 : activeHero === 'PRIORITY' ? 2 : 1.6;
+          target.remainingTime = Math.max(0, target.remainingTime - damage);
+          soundFX.playLaser(activeHero === 'RR' ? 750 : 550, 0.06);
 
-            ctx.strokeStyle = hero.color;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(cpuX + 65, cpuY);
-            ctx.lineTo(target.x, target.y);
-            ctx.stroke();
+          // Draw laser line
+          ctx.strokeStyle = hero.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(cpuX + 65, cpuY);
+          ctx.lineTo(target.x, target.y);
+          ctx.stroke();
 
-            createExplosion(target.x, target.y, target.color, 4);
+          createExplosion(target.x, target.y, target.color, 4);
 
-            setLiveGantt((prev) => [
-              ...prev.slice(-12),
-              {
-                pid: target!.pid,
-                hero: activeHero,
-                color: target!.color,
-                duration: 1,
-              },
-            ]);
+          setLiveGantt((prev) => [
+            ...prev.slice(-12),
+            {
+              pid: target!.pid,
+              hero: activeHero,
+              color: target!.color,
+              duration: 1,
+            },
+          ]);
 
-            setUltimateCharge((prev) => Math.min(100, prev + 6));
-          }
+          setUltimateCharge((prev) => Math.min(100, prev + 5));
         }
 
         // Update & Render Monsters
@@ -385,38 +462,63 @@ export const ArcadeGame: React.FC = () => {
           }
 
           const radius = m.isBoss ? 28 : 18;
+          const isTargeted = target && target.id === m.id;
 
+          // Target lock-on reticle highlight around actively scheduled process
+          if (isTargeted) {
+            ctx.save();
+            ctx.strokeStyle = hero.color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, radius + 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Label targeting logic above
+            ctx.fillStyle = hero.color;
+            ctx.font = 'bold 9px monospace';
+            ctx.textAlign = 'center';
+            const targetReason = activeHero === 'SJF' ? 'MIN BT' : activeHero === 'PRIORITY' ? 'VIP P1' : activeHero === 'RR' ? 'QUANTUM' : 'FIFO';
+            ctx.fillText(`TARGET [${targetReason}]`, m.x, m.y - radius - 20);
+          }
+
+          // Shadow / Glow
           ctx.fillStyle = m.color + '22';
           ctx.beginPath();
           ctx.arc(m.x, m.y, radius + 6, 0, Math.PI * 2);
           ctx.fill();
 
+          // Body
           ctx.fillStyle = '#0f172a';
           ctx.strokeStyle = m.color;
-          ctx.lineWidth = 2;
+          ctx.lineWidth = isTargeted ? 3 : 2;
           ctx.beginPath();
           ctx.arc(m.x, m.y, radius, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
 
+          // PID Label
           ctx.fillStyle = '#ffffff';
           ctx.font = `bold ${m.isBoss ? '12px' : '10px'} monospace`;
           ctx.textAlign = 'center';
           ctx.fillText(m.pid, m.x, m.y + 3);
 
+          // Priority Badge & Burst
           ctx.fillStyle = '#ffd700';
           ctx.font = '9px monospace';
-          ctx.fillText(`P${m.priority}`, m.x, m.y - radius - 10);
+          ctx.fillText(`P${m.priority} • BT:${Math.ceil(m.remainingTime)}`, m.x, m.y - radius - 8);
 
+          // HP / Remaining Burst Bar
           const barWidth = radius * 2.2;
           const barHeight = 4;
           const hpRatio = m.remainingTime / m.burstTime;
 
           ctx.fillStyle = '#334155';
-          ctx.fillRect(m.x - barWidth / 2, m.y - radius - 6, barWidth, barHeight);
+          ctx.fillRect(m.x - barWidth / 2, m.y - radius - 4, barWidth, barHeight);
 
           ctx.fillStyle = m.color;
-          ctx.fillRect(m.x - barWidth / 2, m.y - radius - 6, barWidth * hpRatio, barHeight);
+          ctx.fillRect(m.x - barWidth / 2, m.y - radius - 4, barWidth * hpRatio, barHeight);
         }
 
         // Update Particles
@@ -448,7 +550,7 @@ export const ArcadeGame: React.FC = () => {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
       window.removeEventListener('resize', updateSize);
     };
-  }, [isPlaying, activeHero, hero, wave, cpuHealth, combo, spawnMonster]);
+  }, [isPlaying, activeHero, hero, wave, cpuHealth, combo, spawnProcessBatch]);
 
   return (
     <div className="space-y-4">
@@ -559,7 +661,7 @@ export const ArcadeGame: React.FC = () => {
                 <span className="text-4xl animate-bounce">🕹️</span>
                 <h3 className="text-2xl font-black text-white">Scheduler Arcade Defense</h3>
                 <p className="text-xs text-slate-400 max-w-md">
-                  Switch heroes on the fly to match incoming process properties (Arrival Order, Burst Time, Priority, and Time Slices)!
+                  Multiple processes with different Burst Times & Priorities enter together. Switch heroes dynamically to counter them!
                 </p>
                 <div className="flex items-center gap-3">
                   <button
