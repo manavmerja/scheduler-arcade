@@ -94,6 +94,8 @@ export const ArcadeGame: React.FC = () => {
 
   const hero = SCHEDULER_HEROES[activeHero];
 
+
+  
   // Helper to spawn a single process monster with custom specs
   const createMonster = useCallback((canvas: HTMLCanvasElement, config?: {
     burst?: number;
