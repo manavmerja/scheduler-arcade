@@ -130,7 +130,7 @@ export const ArcadeGame: React.FC = () => {
     };
   }, []);
 
-  // Spawn an educational batch of 2-3 diverse processes
+  // Spawn an educational batch of 2-3 diverse processes arriving together
   const spawnProcessBatch = useCallback((count = 3, isBossWave = false) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -141,47 +141,37 @@ export const ArcadeGame: React.FC = () => {
     }
 
     // Diverse preset batches so all 4 algorithms have clear strategic targets
-    const yStep = (canvas.height - 160) / Math.max(count, 1);
+    const availableHeight = canvas.height - 140;
+    const yStep = availableHeight / Math.max(count, 1);
     
-    // Process 1: Low Burst Time (SJF Target!)
+    // Process 1: Low Burst Time (SJF Target!) - Top lane
     monstersRef.current.push(createMonster(canvas, {
       burst: 2,
       priority: 4,
       color: '#10b981', // Emerald
       xOffset: 0,
-      yPos: 70 + 0 * yStep,
+      yPos: 65 + 0 * yStep,
     }));
 
-    // Process 2: High Priority VIP (Priority Target!)
+    // Process 2: High Priority VIP (Priority Target!) - Center lane
     if (count >= 2) {
       monstersRef.current.push(createMonster(canvas, {
-        burst: 6,
+        burst: 5,
         priority: 1, // P1 VIP!
         color: '#ffd700', // Gold
-        xOffset: 45,
-        yPos: 70 + 1 * yStep,
+        xOffset: 5,
+        yPos: 65 + 1 * yStep,
       }));
     }
 
-    // Process 3: High Burst Heavy Job (FCFS Convoy / RR multi-slice)
+    // Process 3: High Burst Heavy Job (FCFS Convoy / RR multi-slice) - Bottom lane
     if (count >= 3) {
       monstersRef.current.push(createMonster(canvas, {
-        burst: 9,
+        burst: 8,
         priority: 3,
         color: '#ff007f', // Magenta
-        xOffset: 90,
-        yPos: 70 + 2 * yStep,
-      }));
-    }
-
-    // Process 4: Medium Interactive Job
-    if (count >= 4) {
-      monstersRef.current.push(createMonster(canvas, {
-        burst: 4,
-        priority: 2,
-        color: '#00f0ff', // Cyan
-        xOffset: 135,
-        yPos: 70 + 1.5 * yStep,
+        xOffset: 10,
+        yPos: 65 + 2 * yStep,
       }));
     }
   }, [createMonster]);
@@ -205,10 +195,10 @@ export const ArcadeGame: React.FC = () => {
     lastSpawnTimeRef.current = Date.now();
     soundFX.playLaser(700, 0.15);
 
-    // Instantly spawn an initial wave of 3 diverse processes!
+    // Instantly spawn an initial batch of 3 diverse processes arriving together!
     setTimeout(() => {
       spawnProcessBatch(3);
-    }, 100);
+    }, 50);
   };
 
   // Use Skill
@@ -362,11 +352,12 @@ export const ArcadeGame: React.FC = () => {
 
       if (isPlaying) {
         const now = Date.now();
-        // Spawn batches of 2-3 processes periodically
-        const spawnDelay = Math.max(3000, 5000 - wave * 300);
-        if (now - lastSpawnTimeRef.current > spawnDelay) {
+        // Keep lively multi-process action: spawn whenever screen has < 2 processes OR after 2.2s
+        const spawnDelay = Math.max(1800, 2400 - wave * 80);
+        const shouldSpawn = monstersRef.current.length < 2 || (now - lastSpawnTimeRef.current > spawnDelay);
+        if (shouldSpawn && monstersRef.current.length <= 6) {
           const isBoss = wave % 5 === 0 && monstersRef.current.length === 0;
-          spawnProcessBatch(isBoss ? 1 : Math.min(3, 2 + Math.floor(wave / 2)), isBoss);
+          spawnProcessBatch(isBoss ? 1 : 3, isBoss);
           lastSpawnTimeRef.current = now;
         }
 
